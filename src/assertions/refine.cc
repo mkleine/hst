@@ -404,7 +404,7 @@ namespace hst
     // For a failures refinement, each (SPEC, IMPL) pair must satisfy
     // the following condition:
     //
-    //   ∀ α: accs(IMPL) • ∃ β: accs(SPEC) • α ⊇ β
+    //   ∀ α: accs(IMPL) • ∃ β: accs(SPEC) • α ⊇ β ∧ (β =∅ ⇒ α = ∅)
     //
     // If this doesn't hold, then the counterexample consists of the
     // trace seen so far, along with an alphabet α which failed the
@@ -488,6 +488,25 @@ namespace hst
                     if (is_superset(ia_it->begin(), ia_it->end(),
                                     sa_it->begin(), sa_it->end()))
                     {
+                        /*
+                         * An empty SPEC acceptance is ok only if the
+                         * IMPL acceptance is empty, too. The trace
+                         * inclusion could be violated otherwise.
+                         */
+                        intset_t spec_acc(sa_it->begin(), sa_it->end());
+                        if (spec_acc.size()
+                            == (unsigned long)0)
+                        {
+                            intset_t impl_acc(ia_it->begin(), ia_it->end());
+                            if (impl_acc.size()
+                                != (unsigned long)0)
+                            {
+#if DEBUG_REFINEMENT
+                                cerr << "Ignoring empty acceptance of SPEC!" << endl;
+#endif
+                                continue;
+                            }
+                        }
                         /*
                          * Excellent, this SPEC acceptance is a subset
                          * of the IMPL acceptance.  We can move on to
